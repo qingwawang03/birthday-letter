@@ -52,6 +52,6 @@
 | `index.html` | 网页的结构 |
 | `styles.css` | 所有颜色、排版和动画 |
 | `app.js` | 信的内容、动画流程、音乐控制 |
-| `assets/music.mp3` | 你的音乐（需要你自己放进去） |
+| `assets/music.mp3` | 你的音乐，换歌直接覆盖这个文件 |
 | `assets/paper.jpg` | 水彩纸背景，想换直接覆盖这张图 |
 | `assets/icon.svg` | 浏览器标签页上的小图标 |

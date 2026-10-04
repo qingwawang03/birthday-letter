@@ -68,6 +68,7 @@ const CONFIG = {
   const FINAL_DELAY  = reduceMotion ? 0 : 1020;
 
   let opened = false;
+  let typed  = false;
 
   /* ---------- 把配置里的文字放进信纸 ---------- */
 
@@ -177,6 +178,10 @@ const CONFIG = {
   }
 
   function typeLetter() {
+    // 只允许写一次：任何重复触发都不会把整封信写两遍
+    if (typed) { return; }
+    typed = true;
+
     const paragraphs = [];
 
     CONFIG.paragraphs.forEach(function (text) {
@@ -187,7 +192,7 @@ const CONFIG = {
     });
 
     if (reduceMotion) {
-      paragraphs.forEach(function (item) { item.el.textContent = item.text; });
+      paragraphs.forEach(function (item) { item.el.textContent = item.chars.join(""); });
       letterPaper.classList.add("is-signed");
       return;
     }
@@ -293,14 +298,6 @@ const CONFIG = {
     if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
       e.preventDefault();
       openLetter();
-    }
-  });
-
-  /* 兜底：如果浏览器直接跳到了「已经打开」的状态（比如从缓存恢复），
-     避免出现一张永远空白的信纸 */
-  window.addEventListener("pageshow", function () {
-    if (opened && !bodyE.childElementCount && !reduceMotion) {
-      typeLetter();
     }
   });
 

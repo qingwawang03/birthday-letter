@@ -1,0 +1,557 @@
+/* ===========================================================
+   一封写给你的信 · 样式
+   想改颜色的话，改下面 :root 里的色值就够了。
+   =========================================================== */
+
+:root {
+  /* 墨色与纸张 */
+  --ink:        #4a4238;
+  --ink-soft:   #857a6c;
+  --paper:      #fffdf8;
+  --paper-warm: #fdf8ee;
+
+  /* 信封 */
+  --env:        #f9f2e5;
+  --env-mid:    #f3ead9;
+  --env-deep:   #eadfc9;
+  --env-line:   #e4d6bd;
+
+  /* 金箔感描边 */
+  --gold-1: #f6e7c2;
+  --gold-2: #d8ba7e;
+  --gold-3: #bd9a5c;
+
+  /* 水彩底色 */
+  --wash-mint: #e6f3ec;
+  --wash-blue: #e5eef9;
+  --wash-rose: #f9e9ec;
+  --wash-cream:#fdf7ea;
+
+  --font-hand: "Ma Shan Zheng", "Kaiti SC", "KaiTi", "STKaiti", cursive;
+  --font-serif: "Noto Serif SC", "Songti SC", "STSong", "SimSun", Georgia, serif;
+
+  --ease: cubic-bezier(.22, .68, .28, 1);
+
+  --open-flap:  620ms;
+  --open-peek:  720ms;
+  --open-card:  640ms;
+  --delay-peek: 400ms;
+  --delay-card: 1020ms;
+  --delay-away: 1120ms;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+html.is-open, html.is-open body { overflow: hidden; }
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background:
+    radial-gradient(120% 90% at 12% 8%,  var(--wash-mint)  0%, rgba(255,255,255,0) 58%),
+    radial-gradient(110% 85% at 88% 14%, var(--wash-blue)  0%, rgba(255,255,255,0) 60%),
+    radial-gradient(120% 95% at 78% 88%, var(--wash-rose)  0%, rgba(255,255,255,0) 62%),
+    radial-gradient(130% 100% at 18% 92%, var(--wash-cream) 0%, rgba(255,255,255,0) 64%),
+    linear-gradient(168deg, #fefcf7 0%, #fbf7f0 52%, #f8f4ec 100%);
+  background-attachment: fixed;
+}
+
+/* 纸纹：如果有 assets/paper.jpg 会自动盖上来，没有就是纯净的水彩底 */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url("assets/paper.jpg");
+  background-size: cover;
+  background-position: center;
+  opacity: .5;
+  mix-blend-mode: multiply;
+}
+
+/* -----------------------------------------------------------
+   背景上缓慢漂浮的水彩光晕
+   ----------------------------------------------------------- */
+.wash {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.wash__blob {
+  position: absolute;
+  border-radius: 50%;
+  opacity: .75;
+  will-change: transform;
+}
+
+.wash__blob--mint {
+  width: 68vmax; height: 68vmax;
+  left: -22vmax; top: -18vmax;
+  background: radial-gradient(circle at 50% 50%, rgba(196, 231, 214, .85) 0%, rgba(196, 231, 214, 0) 68%);
+  animation: drift-a 46s var(--ease) infinite;
+}
+
+.wash__blob--blue {
+  width: 60vmax; height: 60vmax;
+  right: -20vmax; top: -10vmax;
+  background: radial-gradient(circle at 50% 50%, rgba(197, 219, 243, .8) 0%, rgba(197, 219, 243, 0) 68%);
+  animation: drift-b 58s var(--ease) infinite;
+}
+
+.wash__blob--rose {
+  width: 62vmax; height: 62vmax;
+  right: -14vmax; bottom: -24vmax;
+  background: radial-gradient(circle at 50% 50%, rgba(246, 210, 217, .78) 0%, rgba(246, 210, 217, 0) 68%);
+  animation: drift-c 52s var(--ease) infinite;
+}
+
+@keyframes drift-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(4vmax, 3vmax, 0) scale(1.08); }
+}
+@keyframes drift-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.04); }
+  50%      { transform: translate3d(-4vmax, 4vmax, 0) scale(1); }
+}
+@keyframes drift-c {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(-3vmax, -3vmax, 0) scale(1.07); }
+}
+
+/* -----------------------------------------------------------
+   舞台与信封
+   ----------------------------------------------------------- */
+.stage {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: calc(env(safe-area-inset-top) + 24px) 20px calc(env(safe-area-inset-bottom) + 24px);
+}
+
+.scene {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  perspective: 1400px;
+}
+
+.envelope-wrap {
+  position: relative;
+  width: clamp(268px, 76vw, 412px);
+  aspect-ratio: 3 / 2;
+  cursor: pointer;
+  transform-style: flat;
+  transition:
+    opacity 480ms var(--ease) var(--delay-away),
+    transform 480ms var(--ease) var(--delay-away),
+    filter 480ms var(--ease) var(--delay-away);
+  filter: drop-shadow(0 26px 42px rgba(122, 104, 76, .18));
+  -webkit-tap-highlight-color: transparent;
+}
+
+.envelope-wrap:focus-visible {
+  outline: 2px solid var(--gold-3);
+  outline-offset: 14px;
+  border-radius: 10px;
+}
+
+/* 信封背面 */
+.envelope__back {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 8px;
+  background: linear-gradient(170deg, var(--env) 0%, var(--env-mid) 62%, var(--env-deep) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .6);
+}
+
+/* 信纸从信封里探出来的那一角 */
+.peek {
+  position: absolute;
+  left: 6.5%;
+  right: 6.5%;
+  bottom: 5%;
+  height: 88%;
+  z-index: 2;
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, #ffffff 0%, var(--paper) 40%, var(--paper-warm) 100%);
+  box-shadow:
+    0 -6px 18px rgba(120, 100, 70, .16),
+    inset 0 0 0 1px rgba(214, 197, 165, .55);
+  transform: translateY(4%) scale(.99);
+  transition: transform var(--open-peek) var(--ease) var(--delay-peek);
+}
+
+/* 信封正面：三块折片，留出上方那个 V 形开口 */
+.envelope__front {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.fold {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.fold--left {
+  clip-path: polygon(0 0, 50% 50%, 0 100%);
+  background: linear-gradient(96deg, var(--env-deep) 0%, var(--env-mid) 62%, #f6efe1 100%);
+}
+
+.fold--right {
+  clip-path: polygon(100% 0, 50% 50%, 100% 100%);
+  background: linear-gradient(264deg, var(--env-deep) 0%, var(--env-mid) 62%, #f6efe1 100%);
+}
+
+.fold--bottom {
+  clip-path: polygon(0 100%, 50% 50%, 100% 100%);
+  background: linear-gradient(8deg, var(--env-deep) 0%, var(--env-mid) 55%, #f8f2e5 100%);
+}
+
+/* 可翻起的上盖：一片三角形的纸，绕着上沿翻过去 */
+.envelope__flap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 52%;
+  z-index: 4;
+  transform-origin: top center;
+  transform: rotateX(0deg);
+  transition: transform var(--open-flap) var(--ease);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  background: linear-gradient(178deg, #fcf7ec 0%, var(--env-mid) 58%, var(--env-deep) 100%);
+  /* 翻过去以后要能看到纸的背面 */
+  backface-visibility: visible;
+}
+
+.seal {
+  position: absolute;
+  left: 50%;
+  top: 74%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  font-size: 13px;
+  color: #b98f4f;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 32%, #fdf3d8 0%, #f0dcae 46%, #dcbe86 100%);
+  box-shadow:
+    0 2px 6px rgba(150, 117, 62, .28),
+    inset 0 0 0 1px rgba(255, 255, 255, .55);
+  font-family: Georgia, serif;
+}
+
+/* 打开过程中的信封收场 */
+.is-open .envelope-wrap {
+  opacity: 0;
+  transform: translateY(18px) scale(.94);
+  pointer-events: none;
+}
+
+.is-open .peek {
+  transform: translateY(-40%) scale(1);
+}
+
+.is-open .envelope__flap {
+  transform: rotateX(-180deg);
+}
+
+.hint {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: .22em;
+  text-indent: .22em;
+  color: var(--ink-soft);
+  font-family: var(--font-serif);
+  animation: hint-breathe 3.4s ease-in-out infinite;
+  transition: opacity 420ms var(--ease);
+}
+
+@keyframes hint-breathe {
+  0%, 100% { opacity: .55; }
+  50%      { opacity: 1; }
+}
+
+.is-open .hint { opacity: 0; }
+/* 呼吸动画会盖住上面的 opacity，所以要一起关掉 */
+.is-open .hint { animation: none; }
+
+/* -----------------------------------------------------------
+   信纸
+   ----------------------------------------------------------- */
+.letter-card {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  padding: max(3vh, 16px) 16px max(4vh, 20px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 380ms var(--ease) var(--delay-card);
+}
+
+.is-open .letter-card {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.is-open .letter-card__paper {
+  opacity: 1;
+  transform: none;
+}
+
+.letter-card__paper {
+  position: relative;
+  width: min(660px, 94vw);
+  height: min(780px, calc(100dvh - 88px));
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 6px;
+  /* 第一层是可选的水彩纸纹（放进 assets/paper.jpg 才会出现），
+     第二层是纸本身的底色。scroll 让它固定在纸上、不跟着文字滚走 */
+  background-image:
+    url("assets/paper.jpg"),
+    linear-gradient(180deg, #ffffff 0%, var(--paper) 26%, var(--paper-warm) 100%);
+  background-size: cover, auto;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+  background-blend-mode: multiply, normal;
+  box-shadow:
+    0 36px 70px -22px rgba(124, 103, 72, .34),
+    0 2px 10px rgba(124, 103, 72, .08),
+    inset 0 0 0 1px rgba(226, 211, 182, .75);
+  transform: translateY(5%) scale(.72);
+  opacity: 0;
+  transition:
+    transform var(--open-card) var(--ease) var(--delay-card),
+    opacity   var(--open-card) var(--ease) var(--delay-card);
+}
+
+.letter-card__frame {
+  position: relative;
+  padding: clamp(30px, 6vw, 58px) clamp(24px, 6.2vw, 62px) clamp(34px, 6vw, 56px);
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 内侧金线 */
+.letter-card__frame::after {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  pointer-events: none;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  border-image: linear-gradient(140deg, var(--gold-1), var(--gold-2) 45%, var(--gold-3) 70%, var(--gold-1)) 1;
+  opacity: .75;
+}
+
+.letter__salutation {
+  margin: 0 0 clamp(18px, 3.4vw, 30px);
+  font-family: var(--font-hand);
+  font-size: clamp(24px, 4.6vw, 32px);
+  line-height: 1.5;
+  color: #5a4d3d;
+  letter-spacing: .04em;
+}
+
+.letter__body {
+  font-size: clamp(15.5px, 4.1vw, 17.5px);
+  line-height: 2.1;
+  letter-spacing: .02em;
+  color: var(--ink);
+  flex: 1 1 auto;
+}
+
+.letter__body p {
+  margin: 0 0 clamp(16px, 3vw, 22px);
+  text-align: justify;
+  text-justify: inter-ideograph;
+}
+
+.letter__body p:last-child { margin-bottom: 0; }
+
+.letter__sign {
+  margin-top: clamp(26px, 5vw, 44px);
+  text-align: right;
+  opacity: 0;
+  transition: opacity 900ms var(--ease);
+}
+
+.letter-card__paper.is-signed .letter__sign { opacity: 1; }
+
+.letter__signature {
+  margin: 0;
+  font-family: var(--font-hand);
+  font-size: clamp(20px, 4vw, 26px);
+  color: #5a4d3d;
+  letter-spacing: .04em;
+}
+
+.letter__date {
+  margin: 8px 0 0;
+  font-size: 13.5px;
+  letter-spacing: .12em;
+  color: var(--ink-soft);
+}
+
+/* 逐字显现的光标 */
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 2px;
+  vertical-align: -.18em;
+  border-radius: 1px;
+  background: linear-gradient(180deg, var(--gold-2), var(--gold-3));
+  animation: cursor-blink 1.05s steps(2, end) infinite;
+}
+
+.cursor.is-resting {
+  animation: cursor-rest 1.2s ease-in-out 3;
+}
+
+@keyframes cursor-blink {
+  0%, 50%   { opacity: 1; }
+  50.01%, 100% { opacity: 0; }
+}
+
+@keyframes cursor-rest {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .12; }
+}
+
+/* -----------------------------------------------------------
+   右下角的小唱片按钮
+   ----------------------------------------------------------- */
+.audio-toggle {
+  position: fixed;
+  right: max(20px, env(safe-area-inset-right));
+  bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 9;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #a8873f;
+  background:
+    radial-gradient(circle at 34% 28%, #ffffff 0%, #fdf8ec 52%, #f4ead6 100%);
+  box-shadow:
+    0 10px 22px -8px rgba(126, 105, 72, .42),
+    inset 0 0 0 1px rgba(255, 255, 255, .9),
+    0 0 0 1px rgba(216, 186, 126, .7);
+  opacity: 0;
+  transform: translateY(10px) scale(.9);
+  transition: opacity 420ms var(--ease), transform 420ms var(--ease), box-shadow 300ms var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.audio-toggle.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.audio-toggle:hover { box-shadow: 0 14px 26px -8px rgba(126, 105, 72, .5), inset 0 0 0 1px rgba(255,255,255,.9), 0 0 0 1px rgba(216, 186, 126, .85); }
+.audio-toggle:focus-visible { outline: 2px solid var(--gold-3); outline-offset: 3px; }
+.audio-toggle:active { transform: scale(.95); }
+
+.audio-toggle__ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1px solid rgba(216, 186, 126, .6);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.audio-toggle.is-playing .audio-toggle__ring {
+  animation: ring-breathe 3.2s ease-in-out infinite;
+}
+
+@keyframes ring-breathe {
+  0%, 100% { opacity: .18; transform: scale(.96); }
+  50%      { opacity: .6;  transform: scale(1.04); }
+}
+
+.audio-toggle__icon {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+  display: block;
+}
+
+.audio-toggle .icon-play { display: block; }
+.audio-toggle .icon-pause { display: none; }
+
+.audio-toggle.is-playing .icon-play { display: none; }
+.audio-toggle.is-playing .icon-pause { display: block; }
+
+/* -----------------------------------------------------------
+   手机竖屏微调
+   ----------------------------------------------------------- */
+@media (max-width: 420px) {
+  .scene { gap: 26px; }
+  .letter-card { padding-left: 10px; padding-right: 10px; }
+  .letter-card__paper { width: 94vw; border-radius: 5px; }
+  .letter-card__frame::after { inset: 9px; }
+  /* 给右下角那个小圆钮腾地方，别压到落款和日期 */
+  .letter-card__frame { padding-bottom: 84px; }
+  .audio-toggle { width: 50px; height: 50px; }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  .letter-card__paper { height: calc(100dvh - 48px); }
+}
+
+/* -----------------------------------------------------------
+   系统开启「减弱动态效果」时的兜底
+   ----------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .wash__blob { animation: none; }
+  .hint { animation: none; }
+  .cursor { animation: none; }
+  .audio-toggle.is-playing .audio-toggle__ring { animation: none; opacity: .35; }
+
+  .envelope-wrap,
+  .peek,
+  .letter-card,
+  .letter-card__paper,
+  .envelope__flap {
+    transition-duration: 1ms;
+    transition-delay: 0ms;
+  }
+}

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<title>一封写给你的信</title>
+<meta name="description" content="点开这封信，有些话想说给你听。">
+<meta name="theme-color" content="#fdf9f2">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="一封写给你的信">
+<meta property="og:description" content="点开这封信，有些话想说给你听。">
+
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icon.svg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;500&display=swap">
+
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="wash" aria-hidden="true">
+  <span class="wash__blob wash__blob--mint"></span>
+  <span class="wash__blob wash__blob--blue"></span>
+  <span class="wash__blob wash__blob--rose"></span>
+</div>
+
+<main class="stage" id="stage">
+
+  <div class="scene" id="scene">
+    <div class="envelope-wrap" id="envelope" role="button" tabindex="0"
+         aria-label="点开这封信" aria-describedby="hint">
+
+      <div class="envelope__back"></div>
+      <div class="peek" aria-hidden="true"></div>
+
+      <div class="envelope__front" aria-hidden="true">
+        <span class="fold fold--left"></span>
+        <span class="fold fold--right"></span>
+        <span class="fold fold--bottom"></span>
+      </div>
+
+      <div class="envelope__flap" aria-hidden="true">
+        <span class="seal">♥</span>
+      </div>
+    </div>
+
+    <p class="hint" id="hint">轻触，打开这封信</p>
+  </div>
+
+  <div class="letter-card" id="letterCard">
+    <article class="letter-card__paper" id="letterPaper">
+      <div class="letter-card__frame">
+        <p class="letter__salutation" id="salutation"></p>
+        <div class="letter__body" id="letterBody"></div>
+        <div class="letter__sign">
+          <p class="letter__signature" id="signature"></p>
+          <p class="letter__date" id="letterDate"></p>
+        </div>
+      </div>
+    </article>
+  </div>
+
+</main>
+
+<button class="audio-toggle" id="audioToggle" type="button" hidden
+        aria-label="暂停音乐" aria-pressed="true">
+  <span class="audio-toggle__ring" aria-hidden="true"></span>
+  <svg class="audio-toggle__icon" viewBox="0 0 24 24" aria-hidden="true">
+    <g class="icon-pause">
+      <rect x="7.2" y="6" width="3.4" height="12" rx="1.5"></rect>
+      <rect x="13.4" y="6" width="3.4" height="12" rx="1.5"></rect>
+    </g>
+    <path class="icon-play" d="M9 6.6 L17 12 L9 17.4 Z"></path>
+  </svg>
+</button>
+
+<audio id="audio" loop preload="auto"></audio>
+
+<script src="app.js"></script>
+</body>
+</html>

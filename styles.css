@@ -378,7 +378,8 @@ body::after {
 
 .letter__salutation {
   margin: 0 0 clamp(18px, 3.4vw, 30px);
-  font-family: var(--font-hand);
+  font-family: var(--font-serif);
+  font-weight: 400;
   font-size: clamp(24px, 4.6vw, 32px);
   line-height: 1.5;
   color: #5a4d3d;
@@ -412,7 +413,8 @@ body::after {
 
 .letter__signature {
   margin: 0;
-  font-family: var(--font-hand);
+  font-family: var(--font-serif);
+  font-weight: 400;
   font-size: clamp(20px, 4vw, 26px);
   color: #5a4d3d;
   letter-spacing: .04em;

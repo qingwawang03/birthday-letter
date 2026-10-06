@@ -8,21 +8,27 @@
 const CONFIG = {
 
   /* 信纸开头的那句称呼 */
-  salutation: "致 我的宝贝",
+  salutation: "亲爱的蔡雅慧：",
 
   /* 信件正文。一个引号里是一段，想写几段就写几段。
      段与段之间会自动空一行，不用自己加空行。 */
   paragraphs: [
-    "今天是你的生日。想说的话其实很多，可真正提起笔来，最先冒出来的还是那三个字——遇见你，是我这几年里最好的运气。",
-    "谢谢你陪我走过那些平平常常的日子。你笑起来的样子、你认真做事的样子、你赖床的样子，我都很喜欢，喜欢了很久。",
-    "往后的每一年，我都想陪你过生日。愿你被这个世界温柔以待，愿你想做的事都来得及，愿你的每一天都比昨天更快乐一点。",
+    "这两天在B站看了《给阿嬷的情书》，果然很好看，南洋和汕头的距离被一张张侨批的信纸缩短。有一张远方来信，就日有所期。同样，有一张回信等待被书写，日子也会有了盼头。",
+    "我便萌生了一个念头，给大埔仔村的你，写一封电子信。",
+    "祝你23岁生日快乐！",
+    "你是敢闯之人！独身闯香港，扎根大埔仔。你一个人去观塘、去坑口、去将军澳、去大巴站、去深圳、去高山、去海角。我由衷的敬佩你。每每想到如果我去留学，我会敢乘巴士跨城旅行吗？我会敢和司机喊下一站下车吗？我会敢在商城问售货员吗？我会敢给老师发邮件吗？当我还在内心提前紧张时，你已经让自己的生活步入了正轨，你做到了！",
+    "你是敢打之人！你敢打蟑螂打蜘蛛打蛾子，内心的恐惧被你克服，关关难过关关过。你敢打反诈中心电话，主动发现生活的疑点，积极解决每一道难题。勇气和智力在你身上结合的恰到好处。",
+    "你是敢爱之人！你爱王嘉尔。爱一个人是很了不起的能力，它不是三分钟的热度，也不是浮于表面的欢喜，而是持久的，深沉的，热烈的。我不追星也没有最喜欢的球队，不是因为他们不够好，是我不敢认真了解，不敢全心全意。因此我再次由衷的敬佩你，自始至终的爱，是你最打动人的地方。",
+    "于是我选了专辑作为礼物，选了《Dear》作为背景音乐。",
+    "原来Dear是一首写亲情的歌啊，祝愿你在疲惫沉沦难过时也会想起家人，那里有依靠，有光照。当然，也欢迎你想起我。",
+    "希望演唱会开到广东！给你抢票！",
   ],
 
   /* 落款 */
-  signature: "你的名字",
+  signature: "徐远哲",
 
-  /* 日期。填 null 就是「打开网页的那一天」，也可以自己写死，比如 "2026年10月4日" */
-  date: null,
+  /* 日期。填 null 就是「打开网页的那一天」，写死就用你写的那天 */
+  date: "2026年10月7日",
 
   /* 音乐文件放在 assets 文件夹里，名字要和这里一致 */
   musicFile: "assets/music.mp3",
@@ -42,8 +48,9 @@ const CONFIG = {
   /* 换段时多停一下（毫秒） */
   paragraphPauseMs: 460,
 
-  /* 整封信最长写多久（毫秒）。内容太长会自动加快，不会让人等太久 */
-  maxTypingMs: 22000,
+  /* 整封信最长写多久（毫秒）。内容太长会自动加快，不会让人等太久。
+     对方也可以点一下信纸，直接把剩下的一次读完 */
+  maxTypingMs: 24000,
 };
 
 
@@ -56,6 +63,7 @@ const CONFIG = {
 
   const html        = document.documentElement;
   const envelope    = document.getElementById("envelope");
+  const letterCard  = document.getElementById("letterCard");
   const letterPaper = document.getElementById("letterPaper");
   const salutationE = document.getElementById("salutation");
   const bodyE       = document.getElementById("letterBody");
@@ -63,6 +71,7 @@ const CONFIG = {
   const dateE       = document.getElementById("letterDate");
   const audio       = document.getElementById("audio");
   const toggle      = document.getElementById("audioToggle");
+  const skipHint    = document.getElementById("skipHint");
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const FINAL_DELAY  = reduceMotion ? 0 : 1020;
@@ -161,6 +170,9 @@ const CONFIG = {
   /* ---------- 逐字写作 ---------- */
 
   const PUNCTUATION = "，。、！？；：…—～·,.;:!?";
+  const HINT_AFTER_MS = 9000;   // 预计要写这么久以上，就给一个「直接读完」的出口
+
+  let typer = null;             // 当前这次逐字写作的状态
 
   /* 信纸先按内容量一次高度，短的紧凑、长的可滚动，
      而且开始写之后高度不再变化，不会一跳一跳 */
@@ -197,31 +209,37 @@ const CONFIG = {
       return;
     }
 
-    // 先估一下要写多久，太长就自动提速
+    // 先估一下要写多久。太长就把每个字的间隔和停顿一起缩短，
+    // 保证整封信在 maxTypingMs 之内写完
     let estimate = 0;
-    paragraphs.forEach(function (item, i) {
+    paragraphs.forEach(function (item) {
       item.chars.forEach(function (ch) {
         estimate += CONFIG.typeSpeedMs + (PUNCTUATION.indexOf(ch) >= 0 ? CONFIG.punctuationPauseMs : 0);
       });
       estimate += CONFIG.paragraphPauseMs;
     });
-    const speed = estimate > CONFIG.maxTypingMs
-      ? Math.max(10, CONFIG.typeSpeedMs * (CONFIG.maxTypingMs / estimate))
-      : CONFIG.typeSpeedMs;
+    const scale   = estimate > CONFIG.maxTypingMs ? Math.max(0.2, CONFIG.maxTypingMs / estimate) : 1;
+    const charMs  = Math.max(9, CONFIG.typeSpeedMs * scale);
+    const punctMs = CONFIG.punctuationPauseMs * scale;
+    const paraMs  = CONFIG.paragraphPauseMs * scale;
 
     const cursor = document.createElement("span");
     cursor.className = "cursor";
     cursor.setAttribute("aria-hidden", "true");
 
+    typer = { paragraphs: paragraphs, cursor: cursor, timer: null, finished: false };
+
     let pi = 0;
     let lastScroll = 0;
+
+    if (estimate > HINT_AFTER_MS) { showSkipHint(); }
 
     function step() {
       // 换到下一段
       while (pi < paragraphs.length && paragraphs[pi].index >= paragraphs[pi].chars.length) {
         pi += 1;
         if (pi < paragraphs.length) {
-          window.setTimeout(step, CONFIG.paragraphPauseMs);
+          typer.timer = window.setTimeout(step, paraMs);
           return;
         }
       }
@@ -250,8 +268,8 @@ const CONFIG = {
         keepVisible();
       }
 
-      const wait = speed + (PUNCTUATION.indexOf(ch) >= 0 ? CONFIG.punctuationPauseMs : 0);
-      window.setTimeout(step, wait);
+      const wait = charMs + (PUNCTUATION.indexOf(ch) >= 0 ? punctMs : 0);
+      typer.timer = window.setTimeout(step, wait);
     }
 
     function keepVisible() {
@@ -265,14 +283,47 @@ const CONFIG = {
     }
 
     function finish() {
-      cursor.classList.remove("cursor");
-      cursor.classList.add("cursor", "is-resting");
+      typer.finished = true;
+      hideSkipHint();
+      cursor.classList.add("is-resting");
       window.setTimeout(function () { cursor.remove(); }, 3800);
       // 信写完了，落款再浮现出来
       window.setTimeout(function () { letterPaper.classList.add("is-signed"); }, 280);
     }
 
-    window.setTimeout(step, 260);
+    typer.timer = window.setTimeout(step, 260);
+  }
+
+  function showSkipHint() {
+    skipHint.hidden = false;
+    window.requestAnimationFrame(function () {
+      window.requestAnimationFrame(function () { skipHint.classList.add("is-visible"); });
+    });
+  }
+
+  function hideSkipHint() {
+    skipHint.classList.remove("is-visible");
+    window.setTimeout(function () { skipHint.hidden = true; }, 560);
+  }
+
+  /* 点一下信纸，把还没写的部分一次写完（不想等的时候用） */
+  function skipTyping() {
+    if (!typer || typer.finished) { return; }
+    window.clearTimeout(typer.timer);
+    typer.finished = true;
+
+    typer.paragraphs.forEach(function (item) {
+      if (item.node === null) {
+        item.node = document.createTextNode("");
+        item.el.appendChild(item.node);
+      }
+      item.node.data = item.chars.join("");
+      item.index = item.chars.length;
+    });
+
+    typer.cursor.remove();
+    hideSkipHint();
+    letterPaper.classList.add("is-signed");
   }
 
   /* ---------- 打开信封 ---------- */
@@ -293,6 +344,9 @@ const CONFIG = {
   }
 
   envelope.addEventListener("click", openLetter);
+
+  // 信写到一半时，点信纸就能直接读完
+  letterCard.addEventListener("click", skipTyping);
 
   envelope.addEventListener("keydown", function (e) {
     if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
